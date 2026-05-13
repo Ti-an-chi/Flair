@@ -1,0 +1,12 @@
+Help me setup an express like router in the frontend where I can just call a function router.get("route", Id, body)
+Or something like that, or maybe I'll do it the way I do everything on a normal day, I mean I always have my api.js in the frontend and it calls a route in the backend
+Maybe I'll do the same here, I'll have the functions you can cleanly call within your code like `getCurrentTools()`
+Then the api.js will be the one to call the router in the carver (carver is the name I decide to call a server in the frontend)
+It will be the one to cnstruct the get request, it will use the first argument for route then the second argument as an object that says the method then if there is a body and if there is a parameter
+
+Then let's make the router ready to accept this, I think adding a new route shouldn't be difficult once we set it up, adding a new route will just be as easy as pairing the route with the controller function saying if this route was called, get should call this function
+
+So I think instead of the api to send arguments why doesn't it just create new once (`const router = new router()`)
+Then it should just construct all the router.body and router.method 
+
+In the router I will add different pairs to the
