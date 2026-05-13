@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>UI Builder – Editor</title>
+  <style>
+    :root {
+      --bg: #1a1a2e;
+      --surface: #16213e;
+      --surface2: #0f3460;
+      --primary: #e94560;
+      --primary2: #f39c12;
+      --text: #eee;
+      --text2: #aaa;
+      --border: #2a2a4a;
+      --radius: 12px;
+      --top-h: 52px;
+      --toolbox-h: 50px;
+      --panel-h: 120px;
+      --bottom-panel-height: 0px;
+    }
+
+    body.panel-open {
+      --bottom-panel-height: 160px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* ── TOP BAR ── */
+    #topbar {
+      height: var(--top-h);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 12px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      z-index: 300;
+      flex-shrink: 0;
+    }
+    #topbar .hamburger {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      border: none;
+      background: transparent;
+      color: var(--text);
+      font-size: 1.3rem;
+      cursor: pointer;
+      display: grid;
+      place-content: center;
+    }
+    #project-name {
+      flex: 1; min-width: 0;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 1rem;
+      padding: 6px 10px;
+      outline: none;
+    }
+    #project-name:focus {
+      border-color: var(--primary);
+      background: var(--surface2);
+    }
+    .top-actions {
+      display: flex; gap: 4px; align-items: center;
+    }
+    .icon-btn {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      border: none;
+      background: transparent;
+      color: var(--text);
+      font-size: 1rem;
+      cursor: pointer;
+      display: grid;
+      place-content: center;
+    }
+    .icon-btn:hover { background: var(--surface2); }
+    .icon-btn:disabled { opacity: 0.3; pointer-events: none; }
+    .icon-btn.danger { color: #ff6b6b; }
+
+    /* ── TOOLBOX ── */
+    #toolbox {
+      height: var(--toolbox-h);
+      display: flex;
+      gap: 8px;
+      padding: 6px 12px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+      flex-shrink: 0;
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+      align-items: center;
+    }
+    #toolbox.collapsed {
+      height: 0; padding: 0; overflow: hidden; border: none;
+    }
+    .tool-tile {
+      flex: 0 0 48px;
+      height: 38px;
+      border-radius: 10px;
+      background: var(--surface2);
+      border: 2px solid transparent;
+      color: var(--text);
+      font-size: 0.65rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: border-color .2s, transform .12s;
+      line-height: 1;
+    }
+    .tool-tile .icon { font-size: 1rem; }
+    .tool-tile .label { font-size: 0.55rem; margin-top: 1px; opacity: 0.8; }
+    .tool-tile:hover { border-color: var(--primary); }
+    .tool-tile:active { transform: scale(0.92); }
+    .tool-tile.add-slot {
+      background: var(--primary); color: #fff; font-size: 1.2rem; font-weight: bold;
+    }
+
+    /* ── TOOLBOX TOGGLE ── */
+    #toolbox-toggle {
+      position: fixed;
+      top: calc(var(--top-h) + 8px);
+      right: 10px;
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      border: none;
+      background: var(--surface2);
+      color: var(--text);
+      font-size: 0.65rem;
+      z-index: 310;
+      cursor: pointer;
+      display: grid;
+      place-content: center;
+      transition: top 0.25s;
+    }
+    #toolbox.collapsed ~ #toolbox-toggle {
+      top: calc(var(--top-h) + 4px);
+    }
+
+    /* ── CANVAS (fills all remaining space) ── */
+    #canvas-wrap {
+      flex: 1;
+      height: 100%;
+      overflow: auto;
+      padding: 20px;
+      padding-bottom: calc(20px + var(--bottom-panel-height));
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      transition: padding-bottom 0.3s ease;
+    }
+    #canvas {
+      width: 100%;
+      min-height: 100%;
+      background: #fff;
+      border-radius: var(--radius);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      color: #111;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+    .canvas-el {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: outline 0.1s;
+      position: relative;
+    }
+    .canvas-el.selected {
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
+    }
+    .canvas-placeholder {
+      padding: 30px;
+      border: 2px dashed #ccc;
+      border-radius: 8px;
+      text-align: center;
+      color: #aaa;
+      font-size: 0.9rem;
+      pointer-events: none;
+    }
+
+    /* ── BOTTOM PANEL (fixed above canvas) ── */
+    #bottom-panel-wrap {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 400;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      height: 160px;
+      transition: transform 0.3s ease;
+    }
+    #bottom-panel-wrap.collapsed {
+      transform: translateY(100%);
+    }
+
+    #bottom-panel {
+      height: var(--panel-h);
+      display: flex;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .property-group {
+      flex: 0 0 calc(100% - 24px);
+      scroll-snap-align: start;
+      padding: 12px 16px;
+      min-width: calc(100% - 24px);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      justify-content: center;
+    }
+    .property-group h4 {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--primary2);
+      margin-bottom: 2px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* ── GROUP DOTS ── */
+    .group-dots {
+      display: flex;
+      gap: 5px;
+      padding: 6px 16px;
+      justify-content: center;
+    }
+    .group-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--border);
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .group-dot.active {
+      background: var(--primary);
+      width: 18px;
+      border-radius: 3px;
+    }
+
+    /* ── FLOATING PANEL BUTTON ── */
+    #float-btn {
+      display: none;
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      font-size: 1.2rem;
+      z-index: 410;
+      box-shadow: 0 6px 20px rgba(233,68,96,0.45);
+      touch-action: none;
+      user-select: none;
+      transition: box-shadow 0.2s;
+    }
+    #float-btn.visible {
+      display: grid;
+      place-content: center;
+    }
+    #float-btn.dragging {
+      box-shadow: 0 12px 32px rgba(233,68,96,0.7);
+      opacity: 0.9;
+    }
+
+    /* ── SIDEBAR ── */
+    #sidebar {
+      position: fixed;
+      top: 0; left: 0;
+      width: 80%;
+      max-width: 320px;
+      height: 100dvh;
+      background: var(--surface);
+      z-index: 500;
+      transform: translateX(-105%);
+      transition: transform 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+      gap: 10px;
+      overflow-y: auto;
+    }
+    #sidebar.open { transform: translateX(0); }
+    #overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 499;
+      display: none;
+    }
+    #overlay.show { display: block; }
+    .sidebar-tabs {
+      display: flex;
+      gap: 6px;
+    }
+    .sidebar-tab-btn {
+      flex: 1;
+      padding: 8px;
+      border-radius: 8px;
+      border: none;
+      background: var(--surface2);
+      color: var(--text);
+      font-size: 0.75rem;
+      cursor: pointer;
+    }
+    .sidebar-tab-btn.active {
+      background: var(--primary);
+    }
+    #sidebar-content {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex: 1;
+      overflow-y: auto;
+    }
+    .sidebar-card {
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 10px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      font-size: 0.8rem;
+    }
+    .sidebar-card:hover { border-color: var(--primary); }
+
+    /* ── MORE MENU ── */
+    #more-menu {
+      display: none;
+      position: fixed;
+      top: var(--top-h);
+      right: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      flex-direction: column;
+      padding: 4px;
+      z-index: 350;
+    }
+    #more-menu.show { display: flex; }
+    #more-menu button {
+      background: transparent;
+      border: none;
+      color: var(--text);
+      padding: 10px 16px;
+      text-align: left;
+      cursor: pointer;
+      font-size: 0.85rem;
+      border-radius: 6px;
+    }
+    #more-menu button:hover { background: var(--surface2); }
+  </style>
+</head>
+<body>
+
+  <!-- ========== TOP BAR ========== -->
+  <div id="topbar">
+    <button class="hamburger" id="hamburger" title="Sidebar">☰</button>
+    <input id="project-name" value="untitled" spellcheck="false">
+    <div class="top-actions">
+      <button class="icon-btn" id="undo-btn" title="Undo" disabled>↶</button>
+      <button class="icon-btn" id="redo-btn" title="Redo" disabled>↷</button>
+      <button class="icon-btn" id="export-btn" title="Export">⤴</button>
+      <button class="icon-btn" id="more-btn" title="More">⋮</button>
+    </div>
+  </div>
+
+  <!-- ========== TOOLBOX ========== -->
+  <div id="toolbox">
+    <button class="tool-tile" data-element="container"><span class="icon">📦</span><span class="label">Box</span></button>
+    <button class="tool-tile" data-element="text"><span class="icon">📝</span><span class="label">Text</span></button>
+    <button class="tool-tile" data-element="button"><span class="icon">🔘</span><span class="label">Btn</span></button>
+    <button class="tool-tile" data-element="image"><span class="icon">🖼️</span><span class="label">Img</span></button>
+    <button class="tool-tile" data-element="divider"><span class="icon">➖</span><span class="label">Div</span></button>
+    <button class="tool-tile" data-element="card"><span class="icon">🃏</span><span class="label">Card</span></button>
+    <button class="tool-tile" data-element="link"><span class="icon">🔗</span><span class="label">Link</span></button>
+    <button class="tool-tile" data-element="grid"><span class="icon">⊞</span><span class="label">Grid</span></button>
+    <button class="tool-tile add-slot" id="add-more-btn">+</button>
+  </div>
+  <button id="toolbox-toggle" title="Toggle toolbox">▲</button>
+
+  <!-- ========== CANVAS ========== -->
+  <div id="canvas-wrap">
+    <div id="canvas">
+      <div class="canvas-placeholder">Tap a tool above to add elements</div>
+    </div>
+  </div>
+
+  <!-- ========== BOTTOM PANEL (fixed above canvas) ========== -->
+  <div id="bottom-panel-wrap">
+    <div class="group-dots" id="group-dots">
+      <span class="group-dot active" data-index="0"></span>
+    </div>
+    <div id="bottom-panel">
+      <div class="property-group" style="justify-content:center;align-items:center;">
+        <p style="color:var(--text2);font-size:0.8rem;text-align:center;">
+          🔧 Properties panel is empty for now.<br>
+          <small style="font-size:0.7rem;opacity:0.7;">Researching best layout…</small>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== FLOATING BUTTON ========== -->
+  <button id="float-btn" title="Open properties">⚙️</button>
+
+  <!-- ========== MORE MENU ========== -->
+  <div id="more-menu">
+    <button id="clear-project">Clear project</button>
+  </div>
+
+  <!-- ========== SIDEBAR ========== -->
+  <div id="overlay"></div>
+  <div id="sidebar">
+    <h4 style="margin-bottom:4px;">📁 Library</h4>
+    <div class="sidebar-tabs">
+      <button class="sidebar-tab-btn active" id="tab-saved">My Saved</button>
+      <button class="sidebar-tab-btn" id="tab-templates">Templates</button>
+    </div>
+    <div id="sidebar-content">
+      <p style="color:var(--text2);font-size:0.75rem;">Select an element on canvas, then store it from the top menu.</p>
+    </div>
+  </div>
+
+  <!-- ========== SCRIPTS ========== -->
+  <script src="./scripts/app.js">
+    (() => {
+      // ── BOTTOM PANEL ──
+      const bottomWrap = $('#bottom-panel-wrap');
+      const panel = $('#bottom-panel');
+      const dots = $$('.group-dot');
+      const floatBtn = $('#float-btn');
+
+      // Scroll sync with dots
+      panel.addEventListener('scroll', () => {
+        const idx = Math.round(panel.scrollLeft / panel.clientWidth);
+        dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+      });
+
+      dots.forEach(dot => {
+        dot.addEventListener('click', () => {
+          const idx = parseInt(dot.dataset.index);
+          panel.scrollTo({ left: idx * panel.clientWidth, behavior: 'smooth' });
+        });
+      });
+
+      // Collapse / expand
+      function collapsePanel() {
+        bottomWrap.classList.add('collapsed');
+        document.body.classList.remove('panel-open');
+        floatBtn.classList.add('visible');
+      }
+
+      function expandPanel() {
+        bottomWrap.classList.remove('collapsed');
+        document.body.classList.add('panel-open');
+        floatBtn.classList.remove('visible');
+      }
+
+      // Long-press on bottom panel to collapse
+      let holdTimer;
+      bottomWrap.addEventListener('touchstart', (e) => {
+        holdTimer = setTimeout(collapsePanel, 500);
+      }, { passive: true });
+      bottomWrap.addEventListener('touchend', () => clearTimeout(holdTimer));
+      bottomWrap.addEventListener('touchmove', () => clearTimeout(holdTimer));
+
+      // ── FLOATING BUTTON: drag vs click ──
+      let dragState = null;
+
+      floatBtn.addEventListener('pointerdown', (e) => {
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        const rect = floatBtn.getBoundingClientRect();
+        dragState = {
+          startX: e.clientX,
+          startY: e.clientY,
+          offsetX: e.clientX - rect.left,
+          offsetY: e.clientY - rect.top,
+          moved: false
+        };
+        floatBtn.setPointerCapture(e.pointerId);
+        floatBtn.classList.add('dragging');
+        e.preventDefault();
+      });
+
+      window.addEventListener('pointermove', (e) => {
+        if (!dragState) return;
+        const dx = e.clientX - dragState.startX;
+        const dy = e.clientY - dragState.startY;
+        if (Math.abs(dx) > 3 || Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+          dragState.moved = true;
+        }
+        if (dragState.moved) {
+          floatBtn.style.left = (e.clientX - dragState.offsetX) + 'px';
+          floatBtn.style.top  = (e.clientY - dragState.offsetY) + 'px';
+          floatBtn.style.right = 'auto';
+          floatBtn.style.bottom = 'auto';
+        }
+      });
+
+      window.addEventListener('pointerup', (e) => {
+        if (!dragState) return;
+        floatBtn.classList.remove('dragging');
+        if (!dragState.moved) {
+          // It was a click → restore panel
+          expandPanel();
+        }
+        dragState = null;
+      });
+
+      // ── INITIAL STATE ──
+      expandPanel();
+    })();
+  </script>
+</body>
+</html>

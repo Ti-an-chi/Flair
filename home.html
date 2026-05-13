@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>UI Builder – Home</title>
+  <link rel="stylesheet" href="styles/home.css">
+</head>
+<body>
+
+  <header>
+    <span class="logo">UI Builder</span>
+    <button class="btn btn-primary" onclick="location.href='editor.html?new=blank'">+ New Project</button>
+  </header>
+
+  <!-- TEMPLATES SECTION -->
+  <section>
+    <p class="section-title">Start from a template</p>
+    <div class="template-grid">
+      <div class="template-card" onclick="location.href='editor.html?template=blank'">
+        <span class="icon">📄</span>
+        <span class="name">Blank Canvas</span>
+      </div>
+      <div class="template-card" onclick="location.href='editor.html?template=hero'">
+        <span class="icon">🖼️</span>
+        <span class="name">Hero Section</span>
+      </div>
+      <div class="template-card" onclick="location.href='editor.html?template=navbar'">
+        <span class="icon">🧭</span>
+        <span class="name">Navbar</span>
+      </div>
+      <div class="template-card" onclick="location.href='editor.html?template=card-grid'">
+        <span class="icon">🃏</span>
+        <span class="name">Card Grid</span>
+      </div>
+      <div class="template-card" onclick="location.href='editor.html?template=form'">
+        <span class="icon">📝</span>
+        <span class="name">Form</span>
+      </div>
+      <div class="template-card" onclick="location.href='editor.html?template=footer'">
+        <span class="icon">📌</span>
+        <span class="name">Footer</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- SAVED PROJECTS SECTION -->
+  <section>
+    <p class="section-title">Saved Projects</p>
+    <div class="project-list" id="project-list">
+      <!-- Populated by JS below (static demo) -->
+    </div>
+    <div id="no-projects" class="empty-state" style="display:none;">
+      <p>No saved projects yet.</p>
+      <p style="margin-top:4px;">Create one to see it here.</p>
+    </div>
+  </section>
+
+  <script src="scripts/home.js"></script>
+</body>
+</html>
